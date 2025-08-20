@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  fusionpbx:
+    image: ${FUSIONPBX_IMAGE:-skytruongdev/fusionpbx:latest}
+    container_name: fusionpbx
+    restart: unless-stopped
+    network_mode: host  # Use host network for production (better SIP/RTP performance)
+    volumes:
+      - fusionpbx-data:/var/lib/postgresql
+      - fusionpbx-config:/etc/fusionpbx
+      - fusionpbx-recordings:/usr/local/freeswitch/recordings
+      - fusionpbx-logs:/var/log
+      - fusionpbx-sounds:/usr/local/freeswitch/sounds
+      - fusionpbx-storage:/usr/local/freeswitch/storage
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - FUSIONPBX_DOMAIN=${FUSIONPBX_DOMAIN:-pbx.finstar.vn}
+      - FUSIONPBX_ADMIN_USER=${FUSIONPBX_ADMIN_USER:-admin}
+      - FUSIONPBX_ADMIN_PASSWORD=${FUSIONPBX_ADMIN_PASSWORD:-Finstar@2025}
+      - FUSIONPBX_SETUP_WIZARD=${FUSIONPBX_SETUP_WIZARD:-false}  # Disable setup wizard for production
+      - AUTO_INSTALL=${AUTO_INSTALL:-true}  # Enable auto-install for production
+      - ENABLE_HTTPS=${ENABLE_HTTPS:-true}
+      - ENABLE_FAIL2BAN=${ENABLE_FAIL2BAN:-true}
+      - DB_HOST=${DB_HOST:-localhost}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-fusionpbx}
+      - DB_USER=${DB_USER:-fusionpbx}
+      - DB_PASSWORD=${DB_PASSWORD:-fusionpbx}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s  # Increased for auto-install time
+
+    labels:
+      - "com.docker.compose.project=fusionpbx-production"
+      - "com.docker.compose.service=fusionpbx"
+      - "com.finstar.environment=production"
+      - "com.finstar.version=1.0"
+
+
+
+volumes:
+  fusionpbx-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/fusionpbx/data
+  fusionpbx-config:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/fusionpbx/config
+  fusionpbx-recordings:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/fusionpbx/recordings
+  fusionpbx-logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/fusionpbx/logs
+  fusionpbx-sounds:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/fusionpbx/sounds
+  fusionpbx-storage:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/fusionpbx/storage

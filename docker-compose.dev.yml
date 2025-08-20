@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  fusionpbx:
+    image: fusionpbx-custom:latest
+    container_name: fusionpbx-dev
+    restart: unless-stopped
+    networks:
+      - fusionpbx-network
+    ports:
+      - "8080:80"          # HTTP Web Interface
+      - "8443:443"         # HTTPS Web Interface
+      - "5060:5060/tcp"    # SIP TCP
+      - "5060:5060/udp"    # SIP UDP
+      - "5080:5080/tcp"    # SIP Alternative TCP
+      - "5080:5080/udp"    # SIP Alternative UDP
+      - "8022:8021"        # FreeSWITCH Event Socket
+      - "10000-10100:10000-10100/udp"  # RTP Media
+    volumes:
+      - fusionpbx-data:/var/lib/postgresql
+      - fusionpbx-config:/etc/fusionpbx
+      - fusionpbx-recordings:/usr/local/freeswitch/recordings
+      - fusionpbx-logs:/var/log
+      - fusionpbx-sounds:/usr/local/freeswitch/sounds
+      - fusionpbx-storage:/usr/local/freeswitch/storage
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - FUSIONPBX_DOMAIN=${FUSIONPBX_DOMAIN:-localhost}
+      - FUSIONPBX_ADMIN_USER=${FUSIONPBX_ADMIN_USER:-admin}
+      - FUSIONPBX_ADMIN_PASSWORD=${FUSIONPBX_ADMIN_PASSWORD:-admin123}
+      - FUSIONPBX_SETUP_WIZARD=${FUSIONPBX_SETUP_WIZARD:-true}  # Enable setup wizard mode
+      - AUTO_INSTALL=${AUTO_INSTALL:-false}  # Enable auto-install mode
+      - ENABLE_HTTPS=${ENABLE_HTTPS:-true}
+      - ENABLE_FAIL2BAN=${ENABLE_FAIL2BAN:-false}
+      - DB_HOST=${DB_HOST:-localhost}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-fusionpbx}
+      - DB_USER=${DB_USER:-fusionpbx}
+      - DB_PASSWORD=${DB_PASSWORD:-fusionpbx123}
+      - POSTGRES_HOST=${POSTGRES_HOST:-${DB_HOST:-localhost}}
+      - POSTGRES_PORT=${POSTGRES_PORT:-${DB_PORT:-5432}}
+      - POSTGRES_DB=${POSTGRES_DB:-${DB_NAME:-fusionpbx}}
+      - POSTGRES_USER=${POSTGRES_USER:-${DB_USER:-fusionpbx}}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-${DB_PASSWORD:-fusionpbx123}}
+      - FREESWITCH_PASSWORD=${FREESWITCH_PASSWORD:-freeswitch123}
+      - DEBUG=${DEBUG:-true}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.docker.compose.project=fusionpbx-dev"
+      - "com.docker.compose.service=fusionpbx"
+      - "dev.environment=local"
+
+networks:
+  fusionpbx-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+
+volumes:
+  fusionpbx-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./dev-data/data
+  fusionpbx-config:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./dev-data/config
+  fusionpbx-recordings:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./dev-data/recordings
+  fusionpbx-logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./dev-data/logs
+  fusionpbx-sounds:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./dev-data/sounds
+  fusionpbx-storage:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./dev-data/storage
