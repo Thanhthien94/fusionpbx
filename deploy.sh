@@ -161,22 +161,22 @@ if [ -d "/opt/fusionpbx/data" ]; then
     fi
 fi
 
-# Configure firewall for FusionPBX ports (Host Network Mode) - OPTIONAL
+# Configure firewall for FusionPBX ports (Bridge Network Mode) - OPTIONAL
 if [ "${CONFIGURE_FIREWALL:-false}" = "true" ]; then
-    log "Configuring firewall rules for FusionPBX (Host Network Mode)..."
+    log "Configuring firewall rules for FusionPBX (Bridge Network Mode)..."
     if command -v ufw &> /dev/null; then
-        ufw allow 80/tcp        # HTTP Web Interface (direct host port)
-        ufw allow 443/tcp       # HTTPS Web Interface (direct host port)
+        ufw allow 8080/tcp      # HTTP Web Interface (bridge network)
+        ufw allow 8443/tcp      # HTTPS Web Interface (bridge network)
         ufw allow 5060/tcp      # SIP TCP
         ufw allow 5060/udp      # SIP UDP
         ufw allow 5080/tcp      # SIP Alternative TCP
         ufw allow 5080/udp      # SIP Alternative UDP
-        ufw allow 8021/tcp      # FreeSWITCH Event Socket (direct host port)
+        ufw allow 8021/tcp      # FreeSWITCH Event Socket (bridge network)
         ufw allow 10000:10100/udp  # RTP Media
-        log "UFW firewall rules configured for host network"
+        log "UFW firewall rules configured for bridge network"
     elif command -v firewall-cmd &> /dev/null; then
-        firewall-cmd --permanent --add-port=80/tcp
-        firewall-cmd --permanent --add-port=443/tcp
+        firewall-cmd --permanent --add-port=8080/tcp
+        firewall-cmd --permanent --add-port=8443/tcp
         firewall-cmd --permanent --add-port=5060/tcp
         firewall-cmd --permanent --add-port=5060/udp
         firewall-cmd --permanent --add-port=5080/tcp
@@ -184,13 +184,13 @@ if [ "${CONFIGURE_FIREWALL:-false}" = "true" ]; then
         firewall-cmd --permanent --add-port=8021/tcp
         firewall-cmd --permanent --add-port=10000-10100/udp
         firewall-cmd --reload
-        log "Firewalld rules configured for host network"
+        log "Firewalld rules configured for bridge network"
     else
         warn "No firewall detected. Please configure manually."
     fi
 else
     warn "Firewall configuration skipped. Set CONFIGURE_FIREWALL=true to enable automatic firewall configuration."
-    warn "Required ports: 80, 443, 5060, 5080, 8021, 10000-10100"
+    warn "Required ports: 8080, 8443, 5060, 5080, 8021, 10000-10100"
 fi
 
 # Start services
@@ -265,32 +265,32 @@ log "Production deployment completed successfully!"
 echo
 echo -e "${BLUE}=== FusionPBX Production Deployment Status ===${NC}"
 echo -e "${GREEN}✅ Container Status:${NC} $(docker ps --format 'table {{.Names}}\t{{.Status}}' --filter name=fusionpbx)"
-echo -e "${GREEN}✅ Network Mode:${NC} Host Network (Direct Port Access)"
-echo -e "${GREEN}✅ HTTP Interface:${NC} http://${SERVER_IP}/"
-echo -e "${GREEN}✅ HTTPS Interface:${NC} https://${SERVER_IP}/"
+echo -e "${GREEN}✅ Network Mode:${NC} Bridge Network (Port Mapping)"
+echo -e "${GREEN}✅ HTTP Interface:${NC} http://${SERVER_IP}:8080"
+echo -e "${GREEN}✅ HTTPS Interface:${NC} https://${SERVER_IP}:8443"
 echo -e "${GREEN}✅ Admin Login:${NC} ${FUSIONPBX_ADMIN_USER:-admin} / ${FUSIONPBX_ADMIN_PASSWORD:-Finstar@2025}"
 echo -e "${GREEN}✅ Database:${NC} ${DB_NAME:-fusionpbx} (${DB_USER:-fusionpbx})"
 echo -e "${GREEN}✅ SIP Server:${NC} ${SERVER_IP}:5060"
 echo -e "${GREEN}✅ Logs:${NC} docker logs fusionpbx"
 echo
-echo -e "${YELLOW}📋 Host Network Ports:${NC}"
-echo "• HTTP: 80 (Web Interface)"
-echo "• HTTPS: 443 (Secure Web Interface)"
-echo "• SIP: 5060 (TCP/UDP)"
-echo "• SIP Alt: 5080 (TCP/UDP)"
-echo "• Event Socket: 8021"
-echo "• RTP: 10000-10100 (UDP)"
+echo -e "${YELLOW}📋 Port Mapping:${NC}"
+echo "• HTTP: 8080 → 80 (Web Interface)"
+echo "• HTTPS: 8443 → 443 (Secure Web Interface)"
+echo "• SIP: 5060 → 5060 (TCP/UDP)"
+echo "• SIP Alt: 5080 → 5080 (TCP/UDP)"
+echo "• Event Socket: 8021 → 8021"
+echo "• RTP: 10000-10100 → 10000-10100 (UDP)"
 echo
 echo -e "${YELLOW}📋 Production Features:${NC}"
-echo "• Host Network (Optimal SIP/RTP Performance)"
+echo "• Bridge Network (Compatible with existing services)"
 echo "• Auto-Installation: ${AUTO_INSTALL:-true}"
 echo "• HTTPS: ${ENABLE_HTTPS:-true}"
 echo "• Fail2Ban: ${ENABLE_FAIL2BAN:-true}"
 echo "• Persistent Data Storage: /opt/fusionpbx/"
 echo
 echo -e "${YELLOW}📋 Next Steps:${NC}"
-echo "1. Access http://${SERVER_IP}/ or https://${SERVER_IP}/"
-echo "2. Configure Nginx Proxy Manager to proxy ${FUSIONPBX_DOMAIN:-pbx.finstar.vn} → ${SERVER_IP}:80"
+echo "1. Access http://${SERVER_IP}:8080 or https://${SERVER_IP}:8443"
+echo "2. Configure Nginx Proxy Manager to proxy ${FUSIONPBX_DOMAIN:-pbx.finstar.vn} → ${SERVER_IP}:8080"
 echo "3. Set up extensions and dial plans"
 echo "4. Test SIP connectivity on ${SERVER_IP}:5060"
 echo "5. Check logs: docker logs fusionpbx -f"

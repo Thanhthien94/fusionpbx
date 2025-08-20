@@ -5,7 +5,15 @@ services:
     image: ${FUSIONPBX_IMAGE:-skytruongdev/fusionpbx:latest}
     container_name: fusionpbx
     restart: unless-stopped
-    network_mode: host  # Use host network for production (better SIP/RTP performance)
+    ports:
+      - "8080:80"          # HTTP Web Interface
+      - "8443:443"         # HTTPS Web Interface
+      - "5060:5060/tcp"    # SIP TCP
+      - "5060:5060/udp"    # SIP UDP
+      - "5080:5080/tcp"    # SIP Alternative TCP
+      - "5080:5080/udp"    # SIP Alternative UDP
+      - "8021:8021"        # FreeSWITCH Event Socket
+      - "10000-10100:10000-10100/udp"  # RTP Media
     volumes:
       - fusionpbx-data:/var/lib/postgresql
       - fusionpbx-config:/etc/fusionpbx

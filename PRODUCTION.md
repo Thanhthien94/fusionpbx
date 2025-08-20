@@ -6,7 +6,7 @@ This guide covers the production deployment of FusionPBX using Docker with host 
 
 ## Features
 
-- **Host Network Mode**: Direct port access for optimal SIP/RTP performance
+- **Bridge Network Mode**: Port mapping for compatibility with existing services
 - **Auto-Installation**: Automated setup with admin user creation
 - **Persistent Storage**: Data stored in `/opt/fusionpbx/`
 - **Security**: Fail2Ban integration and HTTPS support
@@ -72,16 +72,16 @@ ENABLE_HTTPS=true
 ENABLE_FAIL2BAN=true
 ```
 
-### Host Network Ports
+### Port Mapping
 
-| Service | Port | Protocol | Description |
-|---------|------|----------|-------------|
-| HTTP | 80 | TCP | Web Interface |
-| HTTPS | 443 | TCP | Secure Web Interface |
-| SIP | 5060 | TCP/UDP | SIP Signaling |
-| SIP Alt | 5080 | TCP/UDP | Alternative SIP |
-| Event Socket | 8021 | TCP | FreeSWITCH Control |
-| RTP | 10000-10100 | UDP | Media Streams |
+| Service | Host Port | Container Port | Protocol | Description |
+|---------|-----------|----------------|----------|-------------|
+| HTTP | 8080 | 80 | TCP | Web Interface |
+| HTTPS | 8443 | 443 | TCP | Secure Web Interface |
+| SIP | 5060 | 5060 | TCP/UDP | SIP Signaling |
+| SIP Alt | 5080 | 5080 | TCP/UDP | Alternative SIP |
+| Event Socket | 8021 | 8021 | TCP | FreeSWITCH Control |
+| RTP | 10000-10100 | 10000-10100 | UDP | Media Streams |
 
 ## Backup and Restore
 
