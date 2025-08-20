@@ -40,7 +40,7 @@ nano .env.production
 ### 3. Deploy Production
 
 ```bash
-# Standard deployment
+# Standard deployment (firewall configuration disabled by default)
 sudo ./deploy.sh
 
 # Clean deployment (removes all data)
@@ -48,6 +48,9 @@ sudo CLEAN_DEPLOY=true ./deploy.sh
 
 # Build custom image and deploy
 sudo BUILD_IMAGE=true ./deploy.sh
+
+# Deploy with automatic firewall configuration (may conflict with existing iptables)
+sudo CONFIGURE_FIREWALL=true ./deploy.sh
 ```
 
 ## Configuration
@@ -156,6 +159,46 @@ docker exec -it fusionpbx psql -U postgres -d fusionpbx
 docker exec fusionpbx pg_dumpall -U postgres > backup.sql
 ```
 
+## Firewall Management
+
+### Important Notice
+
+⚠️ **The deploy.sh script does NOT automatically configure firewall by default** to avoid conflicts with existing iptables configurations.
+
+### Firewall Options
+
+1. **Manual Configuration (Recommended)**
+   ```bash
+   # Check current firewall status
+   sudo ./check-firewall.sh
+
+   # Configure firewall manually for required ports:
+   # 80, 443, 5060, 5080, 8021, 10000-10100
+   ```
+
+2. **Automatic Configuration (Use with caution)**
+   ```bash
+   # Enable automatic firewall configuration
+   sudo CONFIGURE_FIREWALL=true ./deploy.sh
+   ```
+
+3. **Restore iptables Service**
+   ```bash
+   # If iptables service was lost, restore it
+   sudo ./restore-iptables.sh
+   ```
+
+### Required Ports
+
+| Port | Protocol | Service | Description |
+|------|----------|---------|-------------|
+| 80 | TCP | HTTP | Web Interface |
+| 443 | TCP | HTTPS | Secure Web Interface |
+| 5060 | TCP/UDP | SIP | SIP Signaling |
+| 5080 | TCP/UDP | SIP Alt | Alternative SIP |
+| 8021 | TCP | Event Socket | FreeSWITCH Control |
+| 10000-10100 | UDP | RTP | Media Streams |
+
 ## Troubleshooting
 
 ### Common Issues
@@ -182,9 +225,31 @@ docker exec fusionpbx pg_dumpall -U postgres > backup.sql
    ```bash
    # Check nginx status
    docker exec fusionpbx supervisorctl status nginx
-   
+
    # Check port 80/443
    netstat -tulpn | grep -E "(80|443)"
+   ```
+
+4. **iptables service missing after deployment**
+   ```bash
+   # Check firewall status
+   sudo ./check-firewall.sh
+
+   # Restore iptables service
+   sudo ./restore-iptables.sh
+
+   # Verify iptables is working
+   sudo systemctl status iptables
+   ```
+
+5. **Firewall conflicts**
+   ```bash
+   # Check for conflicts between UFW, firewalld, and iptables
+   sudo ./check-firewall.sh
+
+   # Disable conflicting services (example)
+   sudo systemctl stop ufw
+   sudo systemctl disable ufw
    ```
 
 ### Log Locations

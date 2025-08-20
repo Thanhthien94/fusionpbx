@@ -161,31 +161,36 @@ if [ -d "/opt/fusionpbx/data" ]; then
     fi
 fi
 
-# Configure firewall for FusionPBX ports (Host Network Mode)
-log "Configuring firewall rules for FusionPBX (Host Network Mode)..."
-if command -v ufw &> /dev/null; then
-    ufw allow 80/tcp        # HTTP Web Interface (direct host port)
-    ufw allow 443/tcp       # HTTPS Web Interface (direct host port)
-    ufw allow 5060/tcp      # SIP TCP
-    ufw allow 5060/udp      # SIP UDP
-    ufw allow 5080/tcp      # SIP Alternative TCP
-    ufw allow 5080/udp      # SIP Alternative UDP
-    ufw allow 8021/tcp      # FreeSWITCH Event Socket (direct host port)
-    ufw allow 10000:10100/udp  # RTP Media
-    log "UFW firewall rules configured for host network"
-elif command -v firewall-cmd &> /dev/null; then
-    firewall-cmd --permanent --add-port=80/tcp
-    firewall-cmd --permanent --add-port=443/tcp
-    firewall-cmd --permanent --add-port=5060/tcp
-    firewall-cmd --permanent --add-port=5060/udp
-    firewall-cmd --permanent --add-port=5080/tcp
-    firewall-cmd --permanent --add-port=5080/udp
-    firewall-cmd --permanent --add-port=8021/tcp
-    firewall-cmd --permanent --add-port=10000-10100/udp
-    firewall-cmd --reload
-    log "Firewalld rules configured for host network"
+# Configure firewall for FusionPBX ports (Host Network Mode) - OPTIONAL
+if [ "${CONFIGURE_FIREWALL:-false}" = "true" ]; then
+    log "Configuring firewall rules for FusionPBX (Host Network Mode)..."
+    if command -v ufw &> /dev/null; then
+        ufw allow 80/tcp        # HTTP Web Interface (direct host port)
+        ufw allow 443/tcp       # HTTPS Web Interface (direct host port)
+        ufw allow 5060/tcp      # SIP TCP
+        ufw allow 5060/udp      # SIP UDP
+        ufw allow 5080/tcp      # SIP Alternative TCP
+        ufw allow 5080/udp      # SIP Alternative UDP
+        ufw allow 8021/tcp      # FreeSWITCH Event Socket (direct host port)
+        ufw allow 10000:10100/udp  # RTP Media
+        log "UFW firewall rules configured for host network"
+    elif command -v firewall-cmd &> /dev/null; then
+        firewall-cmd --permanent --add-port=80/tcp
+        firewall-cmd --permanent --add-port=443/tcp
+        firewall-cmd --permanent --add-port=5060/tcp
+        firewall-cmd --permanent --add-port=5060/udp
+        firewall-cmd --permanent --add-port=5080/tcp
+        firewall-cmd --permanent --add-port=5080/udp
+        firewall-cmd --permanent --add-port=8021/tcp
+        firewall-cmd --permanent --add-port=10000-10100/udp
+        firewall-cmd --reload
+        log "Firewalld rules configured for host network"
+    else
+        warn "No firewall detected. Please configure manually."
+    fi
 else
-    warn "No firewall detected. Please configure manually."
+    warn "Firewall configuration skipped. Set CONFIGURE_FIREWALL=true to enable automatic firewall configuration."
+    warn "Required ports: 80, 443, 5060, 5080, 8021, 10000-10100"
 fi
 
 # Start services
