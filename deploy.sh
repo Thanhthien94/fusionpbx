@@ -232,7 +232,7 @@ if [ "${AUTO_INSTALL:-true}" = "true" ]; then
             log "✅ FusionPBX auto-installation completed successfully!"
 
             # Check if admin user exists
-            local admin_exists=$(docker exec fusionpbx bash -c "PGPASSWORD='fusionpbx' psql -h localhost -U fusionpbx -d fusionpbx -t -c \"SELECT COUNT(*) FROM v_users WHERE username = '${FUSIONPBX_ADMIN_USER:-admin}' AND user_enabled = 'true';\" 2>/dev/null | tr -d ' '")
+            admin_exists=$(docker exec fusionpbx bash -c "PGPASSWORD='fusionpbx' psql -h localhost -U fusionpbx -d fusionpbx -t -c \"SELECT COUNT(*) FROM v_users WHERE username = '${FUSIONPBX_ADMIN_USER:-admin}' AND user_enabled = 'true';\" 2>/dev/null | tr -d ' '")
 
             if [ "$admin_exists" = "1" ]; then
                 log "✅ Admin user '${FUSIONPBX_ADMIN_USER:-admin}' is ready"

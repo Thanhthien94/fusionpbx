@@ -52,9 +52,21 @@ ADMIN_DOMAIN=${FUSIONPBX_DOMAIN:-pbx.finstar.vn}
 
 log "Admin User: $ADMIN_USER@$ADMIN_DOMAIN"
 
-# Step 1: Debug current state
+# Step 1: Debug current state (skip if debug script not available)
 log "Step 1: Debugging current user groups..."
-docker exec fusionpbx php /debug-user-groups.php
+if docker exec fusionpbx test -f /debug-user-groups.php; then
+    docker exec fusionpbx php /debug-user-groups.php
+else
+    warn "Debug script not available in container (need to rebuild image)"
+    log "Checking basic user info..."
+    docker exec fusionpbx bash -c "
+    PGPASSWORD='${DB_PASSWORD:-fusionpbx}' psql -h localhost -U ${DB_USER:-fusionpbx} -d ${DB_NAME:-fusionpbx} -c \"
+    SELECT 'Users:' as info, username, user_enabled FROM v_users LIMIT 5;
+    SELECT 'Groups:' as info, group_name, group_level FROM v_groups WHERE group_name = 'superadmin';
+    SELECT 'User Groups:' as info, u.username, ug.group_name FROM v_user_groups ug JOIN v_users u ON ug.user_uuid = u.user_uuid LIMIT 5;
+    \"
+    "
+fi
 
 # Step 2: Run upgrade permissions
 log "Step 2: Running upgrade permissions..."
@@ -141,7 +153,21 @@ fi
 
 # Step 6: Final verification
 log "Step 6: Final verification..."
-docker exec fusionpbx php /debug-user-groups.php
+if docker exec fusionpbx test -f /debug-user-groups.php; then
+    docker exec fusionpbx php /debug-user-groups.php
+else
+    log "Final verification with basic queries..."
+    docker exec fusionpbx bash -c "
+    PGPASSWORD='${DB_PASSWORD:-fusionpbx}' psql -h localhost -U ${DB_USER:-fusionpbx} -d ${DB_NAME:-fusionpbx} -c \"
+    SELECT 'Final Check - Admin User Groups:' as info, u.username, ug.group_name, g.group_level
+    FROM v_user_groups ug
+    JOIN v_users u ON ug.user_uuid = u.user_uuid
+    JOIN v_groups g ON ug.group_uuid = g.group_uuid
+    WHERE u.username = '$ADMIN_USER'
+    ORDER BY g.group_level DESC;
+    \"
+    "
+fi
 
 # Step 7: Clear cache
 log "Step 7: Clearing cache..."
