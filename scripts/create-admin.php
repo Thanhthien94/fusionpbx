@@ -24,11 +24,30 @@ echo "Creating FusionPBX admin user (official method)...\n";
 echo "Domain: $domain_name\n";
 echo "Username: $admin_username\n";
 
+// Retry logic for database connection
+$max_retries = 10;
+$retry_delay = 3;
+
+for ($i = 0; $i < $max_retries; $i++) {
+    try {
+        // Connect to database
+        $dsn = "pgsql:host=$db_host;port=$db_port;dbname=$db_name";
+        $pdo = new PDO($dsn, $db_user, $db_password);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        echo "✅ Database connection established\n";
+        break;
+    } catch (Exception $e) {
+        echo "⚠️ Database connection attempt " . ($i + 1) . "/$max_retries failed: " . $e->getMessage() . "\n";
+        if ($i == $max_retries - 1) {
+            echo "❌ Failed to connect to database after $max_retries attempts\n";
+            exit(1);
+        }
+        echo "Retrying in $retry_delay seconds...\n";
+        sleep($retry_delay);
+    }
+}
+
 try {
-    // Connect to database
-    $dsn = "pgsql:host=$db_host;port=$db_port;dbname=$db_name";
-    $pdo = new PDO($dsn, $db_user, $db_password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
     // Generate UUIDs (simple UUID v4 generation)
     function generate_uuid() {
@@ -78,29 +97,62 @@ try {
     }
     
     // Always check and assign superadmin group (even if user exists)
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM v_user_groups WHERE user_uuid = ? AND group_name = 'superadmin'");
-    $stmt->execute([$user_uuid]);
-    $has_superadmin = $stmt->fetchColumn();
-    
-    if (!$has_superadmin) {
-        echo "Assigning superadmin group...\n";
-        
-        // Get superadmin group UUID
-        $stmt = $pdo->prepare("SELECT group_uuid FROM v_groups WHERE group_name = 'superadmin'");
-        $stmt->execute();
-        $group_uuid = $stmt->fetchColumn();
-        
-        if ($group_uuid) {
-            // Add user to superadmin group (following official pattern)
-            $user_group_uuid = generate_uuid();
-            $stmt = $pdo->prepare("INSERT INTO v_user_groups (user_group_uuid, domain_uuid, group_name, group_uuid, user_uuid) VALUES (?, ?, 'superadmin', ?, ?)");
-            $stmt->execute([$user_group_uuid, $domain_uuid, $group_uuid, $user_uuid]);
-            echo "✅ User added to superadmin group\n";
-        } else {
-            echo "⚠️ Warning: superadmin group not found\n";
+    echo "Checking superadmin group assignment...\n";
+
+    // Wait for groups table to be ready
+    $groups_ready = false;
+    for ($i = 0; $i < 5; $i++) {
+        try {
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM v_groups WHERE group_name = 'superadmin'");
+            $stmt->execute();
+            $group_count = $stmt->fetchColumn();
+            if ($group_count > 0) {
+                $groups_ready = true;
+                break;
+            }
+        } catch (Exception $e) {
+            echo "⚠️ Groups table not ready, waiting...\n";
         }
+        sleep(2);
+    }
+
+    if (!$groups_ready) {
+        echo "❌ Groups table not ready, skipping group assignment\n";
     } else {
-        echo "User already has superadmin permissions\n";
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM v_user_groups WHERE user_uuid = ? AND group_name = 'superadmin'");
+        $stmt->execute([$user_uuid]);
+        $has_superadmin = $stmt->fetchColumn();
+
+        if (!$has_superadmin) {
+            echo "Assigning superadmin group...\n";
+
+            // Get superadmin group UUID
+            $stmt = $pdo->prepare("SELECT group_uuid FROM v_groups WHERE group_name = 'superadmin'");
+            $stmt->execute();
+            $group_uuid = $stmt->fetchColumn();
+
+            if ($group_uuid) {
+                // Add user to superadmin group (following official pattern)
+                $user_group_uuid = generate_uuid();
+                $stmt = $pdo->prepare("INSERT INTO v_user_groups (user_group_uuid, domain_uuid, group_name, group_uuid, user_uuid) VALUES (?, ?, 'superadmin', ?, ?)");
+                $stmt->execute([$user_group_uuid, $domain_uuid, $group_uuid, $user_uuid]);
+                echo "✅ User added to superadmin group\n";
+
+                // Verify assignment
+                $stmt = $pdo->prepare("SELECT COUNT(*) FROM v_user_groups WHERE user_uuid = ? AND group_name = 'superadmin'");
+                $stmt->execute([$user_uuid]);
+                $verify_count = $stmt->fetchColumn();
+                if ($verify_count > 0) {
+                    echo "✅ Superadmin group assignment verified\n";
+                } else {
+                    echo "❌ Failed to verify superadmin group assignment\n";
+                }
+            } else {
+                echo "⚠️ Warning: superadmin group not found\n";
+            }
+        } else {
+            echo "✅ User already has superadmin permissions\n";
+        }
     }
     
 } catch (Exception $e) {

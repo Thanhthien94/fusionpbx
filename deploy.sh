@@ -46,12 +46,9 @@ fi
 log "Detected OS: $OS"
 
 # Load environment variables
-if [ -f .env.production ]; then
-    source .env.production
-    log "Production environment variables loaded"
-elif [ -f .env ]; then
+if [ -f .env ]; then
     source .env
-    log "Environment variables loaded"
+    log "Environment variables loaded from .env"
 else
     warn ".env file not found, using defaults"
 fi

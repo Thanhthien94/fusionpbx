@@ -32,9 +32,10 @@ cd fusionpbx-docker
 ### 2. Configure Environment
 
 ```bash
-# Copy and edit production environment file
-cp .env.production.example .env.production
-nano .env.production
+# Edit environment file
+nano .env
+
+# For development, uncomment the development override section at the bottom
 ```
 
 ### 3. Deploy Production
@@ -55,7 +56,7 @@ sudo CONFIGURE_FIREWALL=true ./deploy.sh
 
 ## Configuration
 
-### Environment Variables (.env.production)
+### Environment Variables (.env)
 
 ```bash
 # FusionPBX Configuration
@@ -70,6 +71,14 @@ FUSIONPBX_SETUP_WIZARD=false
 # Security
 ENABLE_HTTPS=true
 ENABLE_FAIL2BAN=true
+
+# For development, uncomment the development override section:
+# FUSIONPBX_DOMAIN=localhost
+# FUSIONPBX_ADMIN_USER=finstar_admin
+# DB_NAME=finstar_pbx
+# DB_USER=finstar_user
+# DB_PASSWORD=Finstar@DB2025
+# ENVIRONMENT=development
 ```
 
 ### Port Mapping
