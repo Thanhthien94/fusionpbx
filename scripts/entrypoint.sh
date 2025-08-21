@@ -192,6 +192,14 @@ main() {
             log "Updating permissions..."
             php /var/www/fusionpbx/core/upgrade/upgrade.php --permissions
 
+            # Step 5: Debug and verify user groups
+            log "Debugging user groups..."
+            php /debug-user-groups.php
+
+            # Step 6: Force assign superadmin group if needed
+            log "Ensuring admin user has superadmin group..."
+            php /create-admin.php
+
             log "✅ Auto-install completed following official pattern!"
             log "🌐 Access FusionPBX at: http://localhost/"
             log "👤 Login: ${FUSIONPBX_ADMIN_USER:-admin}@${FUSIONPBX_DOMAIN:-localhost}"

@@ -239,13 +239,14 @@ COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY config/fusionpbx-config.conf /fusionpbx-config.conf
 COPY scripts/entrypoint.sh /entrypoint.sh
 COPY scripts/create-admin.php /create-admin.php
+COPY scripts/debug-user-groups.php /debug-user-groups.php
 
 # Configure NGINX
 RUN rm -f /etc/nginx/sites-enabled/default \
     && ln -s /etc/nginx/sites-available/fusionpbx /etc/nginx/sites-enabled/fusionpbx
 
 # Make scripts executable
-RUN chmod +x /entrypoint.sh /create-admin.php
+RUN chmod +x /entrypoint.sh /create-admin.php /debug-user-groups.php
 
 # Create volumes
 VOLUME ["/var/backups/fusionpbx", "/etc/fusionpbx", "/var/lib/postgresql", "/usr/local/freeswitch/recordings", "/var/log"]
