@@ -14,6 +14,8 @@ services:
       - "5080:5080/udp"    # SIP Alternative UDP
       - "8021:8021"        # FreeSWITCH Event Socket
       - "10000-10100:10000-10100/udp"  # RTP Media
+    cap_add:
+      - SYS_NICE
     volumes:
       - fusionpbx-data:/var/lib/postgresql
       - fusionpbx-config:/etc/fusionpbx
