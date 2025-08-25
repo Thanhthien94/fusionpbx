@@ -48,6 +48,7 @@ RUN apt-get update && apt-get install -y \
     libswscale-dev \
     libswresample-dev \
     libjpeg-dev \
+    libsndfile1-dev \
     libpng-dev \
     libfreetype6-dev \
     valgrind \
@@ -177,6 +178,11 @@ RUN apt-get update && apt-get install -y \
     libspeexdsp1 \
     libpcre3 \
     libedit2 \
+    # Added for ESL and other modules
+    libldns3 \
+    libavformat59 \
+    libsndfile1 \
+    liblua5.3-0 \
     libsqlite3-0 \
     libcurl4 \
     uuid \
@@ -237,6 +243,7 @@ COPY config/nginx.conf /etc/nginx/sites-available/fusionpbx
 COPY config/php-fpm-fixed.conf /etc/php/8.2/fpm/pool.d/fusionpbx.conf
 COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY config/fusionpbx-config.conf /fusionpbx-config.conf
+COPY config/event_socket.conf.xml /etc/freeswitch/autoload_configs/event_socket.conf.xml
 COPY scripts/entrypoint.sh /entrypoint.sh
 COPY scripts/create-admin.php /create-admin.php
 COPY scripts/debug-user-groups.php /debug-user-groups.php
