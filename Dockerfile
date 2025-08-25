@@ -244,6 +244,7 @@ COPY config/php-fpm-fixed.conf /etc/php/8.2/fpm/pool.d/fusionpbx.conf
 COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY config/fusionpbx-config.conf /fusionpbx-config.conf
 COPY config/event_socket.conf.xml /etc/freeswitch/autoload_configs/event_socket.conf.xml
+COPY config/internal.xml /etc/freeswitch/sip_profiles/internal.xml
 COPY scripts/entrypoint.sh /entrypoint.sh
 COPY scripts/create-admin.php /create-admin.php
 COPY scripts/debug-user-groups.php /debug-user-groups.php
